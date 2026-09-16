@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Resultados en Tiempo Real - Premios Nannan</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body class="bg-gray-900 text-white min-h-screen flex flex-col p-6">
+
+    <header class="flex justify-between items-center mb-6">
+        <div>
+            <h1 class="text-3xl font-extrabold tracking-tight text-amber-500">Votaciones en Directo</h1>
+            <p id="estado-texto" class="text-gray-400 text-sm">Mostrando datos anónimos en tiempo real</p>
+        </div>
+        <button id="btn-desvelar" onclick="toggleDesvelar()" class="bg-amber-600 hover:bg-amber-500 text-white font-bold py-2 px-5 rounded-lg shadow-lg transition duration-200">
+            🔓 Desvelar Ganadores
+        </button>
+    </header>
+
+    <!-- Área del Gráfico -->
+    <main class="flex-1 bg-gray-800 rounded-2xl p-6 shadow-2xl relative">
+        <canvas id="chartResultados"></canvas>
+    </main>
+
+    <script>
+        let desvelado = false;
+        let chartInstance = null;
+
+        document.addEventListener('DOMContentLoaded', () => {
+            inicializarGrafico();
+            actualizarResultados();
+            // Polling: Actualiza los votos cada 2 segundos sin recargar
+            setInterval(actualizarResultados, 2000);
+        });
+
+        function inicializarGrafico() {
+            const ctx = document.getElementById('chartResultados').getContext('2d');
+            chartInstance = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: [], // Se llenarán dinámicamente
+                    datasets: [{
+                        label: 'Votos',
+                        data: [], // Se llenarán dinámicamente
+                        backgroundColor: 'rgba(245, 158, 11, 0.85)', // Ámbar de Tailwind
+                        borderColor: 'rgba(245, 158, 11, 1)',
+                        borderWidth: 2,
+                        borderRadius: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            // ticks: { color: '#9CA3AF', stepSize: 1 }, // Gris claro
+                            ticks: { 
+                                color: '#F3F4F6', // Casi blanco para máxima visibilidad
+                                stepSize: 1 
+                            }, 
+                            grid: { color: 'rgba(255, 255, 255, 0.1)' } // Líneas de cuadrícula sutiles
+                        },
+                        x: {
+                            ticks: { 
+                                color: '#F3F4F6', // *** ESTA LÍNEA ES CLAVE: Color casi blanco para las etiquetas ***
+                                font: { size: 12, weight: 'bold' } 
+                            },
+                            grid: { display: false } // Ocultar líneas verticales
+                        }
+                    },
+                    plugins: {
+                        legend: { display: false } // Ocultar la leyenda "Votos"
+                    }
+                }
+            });
+        }
+
+        function actualizarResultados() {
+            fetch(`obtener_resultados.php?desvelar=${desvelado ? 1 : 0}`)
+                .then(res => res.json())
+                .then(res => {
+                    if (res.success) {
+                        const etiquetas = res.data.map(item => item.etiqueta);
+                        const votos = res.data.map(item => item.votos);
+
+                        chartInstance.data.labels = etiquetas;
+                        chartInstance.data.datasets[0].data = votos;
+
+                        // Si está desvelado, destacar la barra del ganador en verde
+                            if (desvelado) {
+                                const maxVotos = Math.max(...votos);
+                                chartInstance.data.datasets[0].backgroundColor = votos.map(v => 
+                                    (v === maxVotos && maxVotos > 0) ? 'rgba(34, 197, 94, 0.9)' : 'rgba(245, 158, 11, 0.85)'
+                                );
+                            } else {
+                                // Mientras sea anónimo, todas las barras tienen el mismo tono naranja/ámbar
+                                chartInstance.data.datasets[0].backgroundColor = 'rgba(245, 158, 11, 0.85)';
+                            }
+
+                        chartInstance.update();
+                    }
+                });
+        }
+
+        function toggleDesvelar() {
+            desvelado = !desvelado;
+            const btn = document.getElementById('btn-desvelar');
+            const estado = document.getElementById('estado-texto');
+
+            if (desvelado) {
+                btn.innerText = '🔒 Ocultar Identidades';
+                btn.className = 'bg-gray-700 hover:bg-gray-600 text-white font-bold py-2 px-5 rounded-lg shadow-lg transition duration-200';
+                estado.innerText = '¡Nombres desvelados!';
+                estado.className = 'text-green-400 font-bold text-sm';
+            } else {
+                btn.innerText = '🔓 Desvelar Ganadores';
+                btn.className = 'bg-amber-600 hover:bg-amber-500 text-white font-bold py-2 px-5 rounded-lg shadow-lg transition duration-200';
+                estado.innerText = 'Mostrando datos anónimos en tiempo real';
+                estado.className = 'text-gray-400 text-sm';
+            }
+
+            actualizarResultados();
+        }
+    </script>
+</body>
+</html>
