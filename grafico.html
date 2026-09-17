@@ -65,6 +65,7 @@
                         },
                         x: {
                             ticks: { 
+                                display: false,
                                 color: '#F3F4F6', // *** ESTA LÍNEA ES CLAVE: Color casi blanco para las etiquetas ***
                                 font: { size: 12, weight: 'bold' } 
                             },
@@ -88,6 +89,9 @@
 
                         chartInstance.data.labels = etiquetas;
                         chartInstance.data.datasets[0].data = votos;
+
+                        // Controlar visibilidad del eje X según si está desvelado o no
+                        chartInstance.options.scales.x.ticks.display = desvelado;
 
                         // Si está desvelado, destacar la barra del ganador en verde
                             if (desvelado) {
