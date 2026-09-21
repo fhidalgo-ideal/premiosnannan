@@ -3,9 +3,10 @@ header('Content-Type: application/json');
 require_once 'db.php';
 
 $data = json_decode(file_get_contents('php://input'), true);
-$chef_id = isset($data['chef_id']) ? intval($data['chef_id']) : 0;
+// Cambiamos chef_id por tapa_id
+$tapa_id = isset($data['tapa_id']) ? intval($data['tapa_id']) : 0;
 
-if ($chef_id <= 0) {
+if ($tapa_id <= 0) {
     echo json_encode(['success' => false, 'message' => 'Selección no válida.']);
     exit;
 }
@@ -24,9 +25,9 @@ if ($checkStmt->fetch()) {
     exit;
 }
 
-// Registrar voto
-$insertStmt = $pdo->prepare("INSERT INTO votos (chef_id, ip_hash) VALUES (?, ?)");
-if ($insertStmt->execute([$chef_id, $ip_hash])) {
+// Registrar voto guardando la tapa elegida
+$insertStmt = $pdo->prepare("INSERT INTO votos (tapa_id, ip_hash) VALUES (?, ?)");
+if ($insertStmt->execute([$tapa_id, $ip_hash])) {
     echo json_encode(['success' => true, 'message' => '¡Voto registrado con éxito! Gracias por participar.']);
 } else {
     echo json_encode(['success' => false, 'message' => 'Error al guardar el voto.']);

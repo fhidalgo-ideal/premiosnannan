@@ -6,19 +6,22 @@ $desvelar = isset($_GET['desvelar']) && $_GET['desvelar'] === '1';
 
 try {
     if ($desvelar) {
-        // Muestra los nombres reales de los chefs
-        $sql = "SELECT c.nombre AS etiqueta, COUNT(v.id) AS votos 
-                FROM chefs c 
-                LEFT JOIN votos v ON c.id = v.chef_id 
-                GROUP BY c.id 
-                ORDER BY c.id ASC";
+        // Muestra Tapa — Chef [Restaurante]
+        $sql = "SELECT CONCAT(t.nombre_tapa, ' — ', c.nombre, ' [', c.restaurante, ']') AS etiqueta, 
+                       COUNT(v.id) AS votos 
+                FROM tapas t
+                INNER JOIN chefs c ON t.chef_id = c.id
+                LEFT JOIN votos v ON t.id = v.tapa_id 
+                GROUP BY t.id 
+                ORDER BY t.id ASC";
     } else {
-        // Muestra las etiquetas anónimas (Plato 01, Plato 02...)
-        $sql = "SELECT c.etiqueta_anonima AS etiqueta, COUNT(v.id) AS votos 
-                FROM chefs c 
-                LEFT JOIN votos v ON c.id = v.chef_id 
-                GROUP BY c.id 
-                ORDER BY c.id ASC";
+        // Muestra únicamente el Nombre de la Tapa
+        $sql = "SELECT t.nombre_tapa AS etiqueta, 
+                       COUNT(v.id) AS votos 
+                FROM tapas t
+                LEFT JOIN votos v ON t.id = v.tapa_id 
+                GROUP BY t.id 
+                ORDER BY t.id ASC";
     }
 
     $stmt = $pdo->query($sql);
