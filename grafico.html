@@ -3,21 +3,53 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Resultados en Tiempo Real - Premios Nannan</title>
+    <title>Resultados en Tiempo Real - Premios Ñam Ñam</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Librería de Confeti -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
 </head>
 <body class="bg-gray-900 text-white min-h-screen flex flex-col p-6">
 
     <header class="flex justify-between items-center mb-6">
         <div>
             <h1 class="text-3xl font-extrabold tracking-tight text-amber-500">Votaciones en Directo</h1>
-            <p id="estado-texto" class="text-gray-400 text-sm">Mostrando datos anónimos en tiempo real</p>
+            <p id="estado-texto" class="text-gray-400 text-sm">Cargando estado de la votación...</p>
         </div>
-        <button id="btn-desvelar" onclick="toggleDesvelar()" class="bg-amber-600 hover:bg-amber-500 text-white font-bold py-2 px-5 rounded-lg shadow-lg transition duration-200">
-            🔓 Desvelar Ganadores
-        </button>
+        <div class="flex items-center space-x-2 bg-gray-800 px-3 py-1.5 rounded-full border border-gray-700">
+            <span class="w-2.5 h-2.5 bg-emerald-500 rounded-full animate-pulse"></span>
+            <span class="text-xs text-gray-300 font-mono">En directo</span>
+        </div>
     </header>
+
+    <!-- BANNER DEL GANADOR -->
+    <div id="card-ganador" class="hidden mb-6 bg-gradient-to-r from-amber-500/20 via-emerald-500/20 to-amber-500/20 border-2 border-amber-500 rounded-2xl p-6 shadow-2xl transition-all">
+        <div class="flex flex-col md:flex-row items-center justify-between gap-6">
+            <div class="flex items-center space-x-6">
+                <!-- Foto del Chef -->
+                <div class="relative">
+                    <img id="ganador-foto-chef" src="" alt="Chef Ganador" class="w-24 h-24 rounded-full object-cover border-4 border-amber-500 shadow-xl">
+                    <span class="absolute -bottom-2 -right-2 bg-amber-500 text-black text-xs font-black px-2 py-0.5 rounded-full shadow">🏆 1º</span>
+                </div>
+                <!-- Datos del Chef y Tapa -->
+                <div>
+                    <span class="text-emerald-400 text-xs font-bold uppercase tracking-widest">¡Tapa y Chef Ganadores!</span>
+                    <h2 id="ganador-tapa" class="text-2xl font-black text-white"></h2>
+                    <p class="text-amber-400 text-lg font-semibold mt-1">
+                        Chef: <span id="ganador-chef" class="text-white"></span>
+                    </p>
+                    <p class="text-gray-300 text-sm">
+                        Restaurante: <span id="ganador-restaurante" class="text-amber-200"></span>
+                    </p>
+                </div>
+            </div>
+            <!-- Votos obtenidos -->
+            <div class="bg-gray-800/80 px-6 py-4 rounded-xl border border-amber-500/30 text-center">
+                <span id="ganador-votos" class="block text-4xl font-extrabold text-amber-400">0</span>
+                <span class="text-xs text-gray-400 font-medium uppercase tracking-wider">Votos Totales</span>
+            </div>
+        </div>
+    </div>
 
     <!-- Área del Gráfico -->
     <main class="flex-1 bg-gray-800 rounded-2xl p-6 shadow-2xl relative">
@@ -26,25 +58,103 @@
 
     <script>
         let desvelado = false;
+        let confetiLanzado = false; // Control para evitar re-lanzar el confeti en cada refresco de 2 segundos
         let chartInstance = null;
+        const imagenesCache = {};
+
+        const pluginImagenesEjeX = {
+            id: 'imagenesEjeX',
+            afterDraw(chart) {
+                /*if (!desvelado) return;*/
+
+                const { ctx, chartArea: { bottom }, scales: { x } } = chart;
+                const size = 36;
+
+                x.ticks.forEach((tick, index) => {
+                    const xPos = x.getPixelForTick(index);
+                    const rutaImagen = chart.data.datasets[0].fotos ? chart.data.datasets[0].fotos[index] : null;
+
+                    if (rutaImagen) {
+                        if (!imagenesCache[rutaImagen]) {
+                            const img = new Image();
+                            img.src = rutaImagen;
+                            img.onload = () => chart.draw();
+                            imagenesCache[rutaImagen] = img;
+                        } else if (imagenesCache[rutaImagen].complete && imagenesCache[rutaImagen].naturalWidth !== 0) {
+                            const img = imagenesCache[rutaImagen];
+                            const yPos = bottom + 22;
+
+                            ctx.save();
+                            ctx.beginPath();
+                            ctx.arc(xPos, yPos, size / 2, 0, Math.PI * 2);
+                            ctx.strokeStyle = '#F59E0B';
+                            ctx.lineWidth = 2;
+                            ctx.stroke();
+
+                            ctx.beginPath();
+                            ctx.arc(xPos, yPos, (size / 2) - 1, 0, Math.PI * 2);
+                            ctx.closePath();
+                            ctx.clip();
+
+                            ctx.drawImage(img, xPos - size / 2, yPos - size / 2, size, size);
+                            ctx.restore();
+                        }
+                    }
+                });
+            }
+        };
+
+        Chart.register(pluginImagenesEjeX);
 
         document.addEventListener('DOMContentLoaded', () => {
             inicializarGrafico();
             actualizarResultados();
-            // Polling: Actualiza los votos cada 2 segundos sin recargar
             setInterval(actualizarResultados, 2000);
         });
+
+        function lanzarConfeti() {
+            const duracion = 3 * 1000;
+            const animacionFin = Date.now() + duracion;
+
+            const intervalo = setInterval(function() {
+                const tiempoRestante = animacionFin - Date.now();
+
+                if (tiempoRestante <= 0) {
+                    return clearInterval(intervalo);
+                }
+
+                const particleCount = 50 * (tiempoRestante / duracion);
+
+                // Disparos continuos desde los laterales izquierdo y derecho
+                confetti({
+                    particleCount,
+                    startVelocity: 30,
+                    spread: 360,
+                    ticks: 60,
+                    origin: { x: Math.random() * 0.2 + 0.1, y: Math.random() - 0.2 }
+                });
+                confetti({
+                    particleCount,
+                    startVelocity: 30,
+                    spread: 360,
+                    ticks: 60,
+                    origin: { x: Math.random() * 0.2 + 0.7, y: Math.random() - 0.2 }
+                });
+            }, 250);
+        }
 
         function inicializarGrafico() {
             const ctx = document.getElementById('chartResultados').getContext('2d');
             chartInstance = new Chart(ctx, {
                 type: 'bar',
                 data: {
-                    labels: [], // Se llenarán dinámicamente
+                    labels: [],
                     datasets: [{
                         label: 'Votos',
-                        data: [], // Se llenarán dinámicamente
-                        backgroundColor: 'rgba(245, 158, 11, 0.85)', // Ámbar de Tailwind
+                        data: [],
+                        fotos: [],
+                        chefs: [],
+                        backgroundColor: 'rgba(245, 158, 11, 0.85)',
                         borderColor: 'rgba(245, 158, 11, 1)',
                         borderWidth: 2,
                         borderRadius: 6
@@ -53,80 +163,105 @@
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
+                    layout: { padding: { bottom: 45 } },
                     scales: {
                         y: {
                             beginAtZero: true,
-                            // ticks: { color: '#9CA3AF', stepSize: 1 }, // Gris claro
-                            ticks: { 
-                                color: '#F3F4F6', // Casi blanco para máxima visibilidad
-                                stepSize: 1 
-                            }, 
-                            grid: { color: 'rgba(255, 255, 255, 0.1)' } // Líneas de cuadrícula sutiles
+                            ticks: { color: '#F3F4F6', stepSize: 1, precision: 0 },
+                            grid: { color: 'rgba(255, 255, 255, 0.1)' }
                         },
                         x: {
-                            ticks: { 
-                                display: true,
-                                color: '#F3F4F6', // *** ESTA LÍNEA ES CLAVE: Color casi blanco para las etiquetas ***
-                                font: { size: 12, weight: 'bold' } 
-                            },
-                            grid: { display: false } // Ocultar líneas verticales
+                            ticks: { display: false },
+                            grid: { display: false }
                         }
                     },
                     plugins: {
-                        legend: { display: false } // Ocultar la leyenda "Votos"
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                title: (context) => context[0].label,
+                                label: (context) => {
+                                    const index = context.dataIndex;
+                                    const chefInfo = chartInstance.data.datasets[0].chefs[index];
+                                    let lineas = [` Votos: ${context.raw}`];
+                                    if (desvelado && chefInfo && chefInfo.nombre) {
+                                        lineas.push(` Chef: ${chefInfo.nombre}`);
+                                        if (chefInfo.restaurante) lineas.push(` Restaurante: ${chefInfo.restaurante}`);
+                                    }
+                                    return lineas;
+                                }
+                            }
+                        }
                     }
                 }
             });
         }
 
         function actualizarResultados() {
-            fetch(`obtener_resultados.php?desvelar=${desvelado ? 1 : 0}`)
+            fetch('obtener_resultados.php')
                 .then(res => res.json())
                 .then(res => {
                     if (res.success) {
+                        desvelado = res.desvelado;
+
+                        const estadoTexto = document.getElementById('estado-texto');
+                        const cardGanador = document.getElementById('card-ganador');
+
+                        if (desvelado && res.data.length > 0) {
+                            estadoTexto.innerText = '¡Nombres, fotos y chefs desvelados!';
+                            estadoTexto.className = 'text-green-400 font-bold text-sm';
+
+                            // Cargar datos del ganador
+                            const ganador = res.data[0];
+                            document.getElementById('ganador-tapa').innerText = ganador.etiqueta;
+                            document.getElementById('ganador-chef').innerText = ganador.nombre_chef || 'Sin especificar';
+                            document.getElementById('ganador-restaurante').innerText = ganador.restaurante || 'Sin especificar';
+                            document.getElementById('ganador-votos').innerText = ganador.votos;
+                            
+                            const fotoChef = ganador.foto_chef ? `img/${ganador.foto_chef}` : 'https://via.placeholder.com/150';
+                            document.getElementById('ganador-foto-chef').src = fotoChef;
+
+                            cardGanador.classList.remove('hidden');
+
+                            // Disparar la animación de confeti solo una vez
+                            if (!confetiLanzado) {
+                                lanzarConfeti();
+                                confetiLanzado = true;
+                            }
+                        } else {
+                            estadoTexto.innerText = 'Mostrando datos anónimos en tiempo real';
+                            estadoTexto.className = 'text-gray-400 text-sm';
+                            cardGanador.classList.add('hidden');
+                            confetiLanzado = false; // Resetear bandera por si se oculta de nuevo
+                        }
+
                         const etiquetas = res.data.map(item => item.etiqueta);
                         const votos = res.data.map(item => item.votos);
+                        const fotos = res.data.map(item => item.foto_tapa ? `img/${item.foto_tapa}` : null);
+                        const chefs = res.data.map(item => ({
+                            nombre: item.nombre_chef,
+                            restaurante: item.restaurante,
+                            foto: item.foto_chef
+                        }));
 
                         chartInstance.data.labels = etiquetas;
                         chartInstance.data.datasets[0].data = votos;
+                        chartInstance.data.datasets[0].fotos = fotos;
+                        chartInstance.data.datasets[0].chefs = chefs;
 
-                        // Controlar visibilidad del eje X según si está desvelado o no
-                        chartInstance.options.scales.x.ticks.display = desvelado;
-
-                        // Si está desvelado, destacar la barra del ganador en verde
-                            if (desvelado) {
-                                const maxVotos = Math.max(...votos);
-                                chartInstance.data.datasets[0].backgroundColor = votos.map(v => 
-                                    (v === maxVotos && maxVotos > 0) ? 'rgba(34, 197, 94, 0.9)' : 'rgba(245, 158, 11, 0.85)'
-                                );
-                            } else {
-                                // Mientras sea anónimo, todas las barras tienen el mismo tono naranja/ámbar
-                                chartInstance.data.datasets[0].backgroundColor = 'rgba(245, 158, 11, 0.85)';
-                            }
+                        if (desvelado) {
+                            const maxVotos = Math.max(...votos);
+                            chartInstance.data.datasets[0].backgroundColor = votos.map(v => 
+                                (v === maxVotos && maxVotos > 0) ? 'rgba(34, 197, 94, 0.9)' : 'rgba(245, 158, 11, 0.85)'
+                            );
+                        } else {
+                            chartInstance.data.datasets[0].backgroundColor = 'rgba(245, 158, 11, 0.85)';
+                        }
 
                         chartInstance.update();
                     }
-                });
-        }
-
-        function toggleDesvelar() {
-            desvelado = !desvelado;
-            const btn = document.getElementById('btn-desvelar');
-            const estado = document.getElementById('estado-texto');
-
-            if (desvelado) {
-                btn.innerText = '🔒 Ocultar Identidades';
-                btn.className = 'bg-gray-700 hover:bg-gray-600 text-white font-bold py-2 px-5 rounded-lg shadow-lg transition duration-200';
-                estado.innerText = '¡Nombres desvelados!';
-                estado.className = 'text-green-400 font-bold text-sm';
-            } else {
-                btn.innerText = '🔓 Desvelar Ganadores';
-                btn.className = 'bg-amber-600 hover:bg-amber-500 text-white font-bold py-2 px-5 rounded-lg shadow-lg transition duration-200';
-                estado.innerText = 'Mostrando datos anónimos en tiempo real';
-                estado.className = 'text-gray-400 text-sm';
-            }
-
-            actualizarResultados();
+                })
+                .catch(err => console.error("Error al actualizar gráfico:", err));
         }
     </script>
 </body>
