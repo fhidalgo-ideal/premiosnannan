@@ -53,7 +53,7 @@
 
         function cargarTapas() {
     // 1. Comprobar primero si la votación está abierta
-    fetch('admin/api_admin.php?action=get_status')
+    fetch('obtener_estado.php')
         .then(res => res.json())
         .then(resStatus => {
             if (resStatus.success && !resStatus.votacion_abierta) {
