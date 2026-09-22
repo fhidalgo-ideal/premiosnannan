@@ -5,31 +5,22 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Maestros Culinarios - VII Edición</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        .bg-header-illustration {
-            background-image: url('img/maestros-culinarios-fondo-2.jpg');
-            background-position: center top;
-            background-size: cover;
-        }
-    </style>
 </head>
-<body class="bg-slate-50 text-gray-800 min-h-screen pb-12 font-sans">
+<body class="bg-slate-50 bg-[url('img/maestros-culinarios-fondo-2.jpg')] bg-no-repeat bg-cover bg-fixed bg-center text-gray-800 min-h-screen pb-12 font-sans">
 
-    <!-- Encabezado con la Ilustración del Evento -->
-    <header class="relative bg-header-illustration pt-10 pb-14 px-4 text-center border-b border-gray-200 shadow-sm">
-        <div class="absolute inset-0 bg-white/75 backdrop-blur-[1px]"></div>
-        
+    <!-- Encabezado Unificado -->
+    <header class="relative bg-white/80 backdrop-blur-md pt-10 pb-12 px-4 text-center border-b border-gray-200 shadow-sm">
         <div class="relative max-w-xl mx-auto flex flex-col items-center">
-            <span class="text-xs font-extrabold tracking-widest text-amber-700 uppercase mb-1">VII EDICIÓN</span>
+            <span class="text-xs font-extrabold tracking-widest text-amber-700 uppercase mb-1">MAESTROS CULINARIOS</span>
             <h1 class="text-3xl sm:text-4xl font-serif text-[#1E5A32] font-black tracking-tight leading-tight">
-                Maestros <span class="font-light italic text-emerald-700">Culinarios</span>
+                Premios <span class="font-light italic text-emerald-700">Ñam Ñam</span>
             </h1>
             <p class="mt-1 text-xs sm:text-sm text-gray-600 font-medium">Degusta las propuestas y vota por tu tapa favorita</p>
         </div>
     </header>
 
     <!-- Contenedor Principal -->
-    <main class="max-w-5xl mx-auto px-4 -mt-5 relative z-10">
+    <main class="max-w-5xl mx-auto px-4 mt-8 relative z-10">
         <div id="mensaje" class="hidden mb-6 p-4 rounded-xl text-center font-semibold shadow-md"></div>
         
         <div id="grid-chefs" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 sm:gap-4">
@@ -37,7 +28,7 @@
         </div>
     </main>
 
-    <footer class="mt-12 text-center text-xs text-gray-500 border-t border-gray-200 pt-6">
+    <footer class="mt-12 text-center text-xs text-gray-500 border-t border-gray-200/80 bg-white/60 backdrop-blur-sm py-6">
         <p class="font-semibold tracking-wider text-gray-600 uppercase">CERVEZAS ALHAMBRA | IDEAL | Maestros Culinarios</p>
     </footer>
 
@@ -52,72 +43,70 @@
         });
 
         function cargarTapas() {
-    // 1. Comprobar primero si la votación está abierta
-    fetch('obtener_estado.php')
-        .then(res => res.json())
-        .then(resStatus => {
-            if (resStatus.success && !resStatus.votacion_abierta) {
-                mostrarMensaje('La votación se encuentra pausada o ha finalizado.', 'bg-amber-50 text-amber-800 border border-amber-200');
-                document.getElementById('grid-chefs').innerHTML = '';
-                return;
-            }
-
-            // 2. Si está abierta, cargar las tapas
-            fetch('obtener_chefs.php')
+            fetch('obtener_estado.php')
                 .then(res => res.json())
-                .then(res => {
-                    if (res.success) {
-                        const container = document.getElementById('grid-chefs');
-                        container.innerHTML = '';
-                        res.data.forEach(tapa => {
-                            const fotoUrl = tapa.foto_tapa && tapa.foto_tapa !== '' ? `img/${tapa.foto_tapa}` : 'https://via.placeholder.com/200?text=Tapa';
-                            const tituloPlato = tapa.nombre_tapa || `Tapa ${tapa.id}`;
-                            
-                            container.innerHTML += `
-                                <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden flex flex-col justify-between p-2.5 sm:p-3 transition hover:shadow-md">
-                                    <div>
-                                        <div class="w-full aspect-square overflow-hidden rounded-lg bg-gray-100 border border-gray-100 mb-2">
-                                            <img src="${fotoUrl}" alt="${tituloPlato}" class="w-full h-full object-cover object-center">
-                                        </div>
-                                        <h3 class="font-bold text-gray-900 text-xs sm:text-sm text-center leading-snug line-clamp-2 min-h-[2.25rem] flex items-center justify-center">
-                                            ${tituloPlato}
-                                        </h3>
-                                    </div>
-
-                                    <button onclick="votar(${tapa.id})" 
-                                        ${yaVoto ? 'disabled' : ''} 
-                                        class="mt-3 w-full bg-[#1E5A32] hover:bg-[#164325] disabled:bg-gray-300 text-white text-xs font-bold py-2 px-2 rounded-lg uppercase tracking-wider transition duration-150 shadow-sm">
-                                        ${yaVoto ? 'Votado' : 'Votar'}
-                                    </button>
-                                </div>
-                            `;
-                        });
+                .then(resStatus => {
+                    if (resStatus.success && !resStatus.votacion_abierta) {
+                        mostrarMensaje('La votación se encuentra pausada o ha finalizado.', 'bg-amber-50 text-amber-800 border border-amber-200');
+                        document.getElementById('grid-chefs').innerHTML = '';
+                        return;
                     }
+
+                    fetch('obtener_chefs.php')
+                        .then(res => res.json())
+                        .then(res => {
+                            if (res.success) {
+                                const container = document.getElementById('grid-chefs');
+                                container.innerHTML = '';
+                                res.data.forEach(tapa => {
+                                    const fotoUrl = tapa.foto_tapa && tapa.foto_tapa !== '' ? `img/${tapa.foto_tapa}` : 'https://via.placeholder.com/200?text=Tapa';
+                                    const tituloPlato = tapa.nombre_tapa || `Tapa ${tapa.id}`;
+                                    
+                                    container.innerHTML += `
+                                        <div class="bg-white/90 backdrop-blur-sm rounded-xl shadow-sm border border-gray-200 overflow-hidden flex flex-col justify-between p-2.5 sm:p-3 transition hover:shadow-md">
+                                            <div>
+                                                <div class="w-full aspect-square overflow-hidden rounded-lg bg-gray-100 border border-gray-100 mb-2">
+                                                    <img src="${fotoUrl}" alt="${tituloPlato}" class="w-full h-full object-cover object-center">
+                                                </div>
+                                                <h3 class="font-bold text-gray-900 text-xs sm:text-sm text-center leading-snug line-clamp-2 min-h-[2.25rem] flex items-center justify-center">
+                                                    ${tituloPlato}
+                                                </h3>
+                                            </div>
+
+                                            <button onclick="votar(${tapa.id})" 
+                                                ${yaVoto ? 'disabled' : ''} 
+                                                class="mt-3 w-full bg-[#1E5A32] hover:bg-[#164325] disabled:bg-gray-300 text-white text-xs font-bold py-2 px-2 rounded-lg uppercase tracking-wider transition duration-150 shadow-sm">
+                                                ${yaVoto ? 'Votado' : 'Votar'}
+                                            </button>
+                                        </div>
+                                    `;
+                                });
+                            }
+                        });
                 });
-        });
-}
-
-function votar(tapaId) {
-    if (yaVoto) return;
-    if (!confirm('¿Confirmas tu voto por esta tapa? Solo puedes votar una vez.')) return;
-
-    fetch('votar.php', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ tapa_id: tapaId }) // Cambiado chef_id por tapa_id
-    })
-    .then(res => res.json())
-    .then(data => {
-        if (data.success) {
-            localStorage.setItem('voto_realizado', 'true');
-            yaVoto = true;
-            mostrarMensaje(data.message, 'bg-emerald-50 text-emerald-800 border border-emerald-200');
-            cargarTapas();
-        } else {
-            mostrarMensaje(data.message, 'bg-red-50 text-red-800 border border-red-200');
         }
-    });
-}
+
+        function votar(tapaId) {
+            if (yaVoto) return;
+            if (!confirm('¿Confirmas tu voto por esta tapa? Solo puedes votar una vez.')) return;
+
+            fetch('votar.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ tapa_id: tapaId })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    localStorage.setItem('voto_realizado', 'true');
+                    yaVoto = true;
+                    mostrarMensaje(data.message, 'bg-emerald-50 text-emerald-800 border border-emerald-200');
+                    cargarTapas();
+                } else {
+                    mostrarMensaje(data.message, 'bg-red-50 text-red-800 border border-red-200');
+                }
+            });
+        }
 
         function mostrarMensaje(text, classes) {
             const el = document.getElementById('mensaje');
