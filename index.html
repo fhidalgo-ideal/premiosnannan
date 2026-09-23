@@ -24,7 +24,8 @@
 
     <!-- Contenedor Principal -->
     <main class="max-w-5xl mx-auto px-4 mt-8 relative z-10">
-        <div id="mensaje" class="hidden mb-6 p-4 rounded-xl text-center font-semibold shadow-md"></div>
+        <!-- Notificación Flotante (Toast Modal) -->
+        <div id="mensaje" class="hidden fixed bottom-6 left-1/2 -translate-x-1/2 z-50 w-[90%] max-w-md p-4 rounded-2xl shadow-2xl text-center font-semibold backdrop-blur-md transition-all duration-300 transform translate-y-0 border"></div>
         
         <div id="grid-chefs" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 sm:gap-4">
             <!-- Las tapas se cargarán dinámicamente aquí -->
@@ -86,23 +87,23 @@
         cargarTapas();
     });
 
-    function cargarTapas() {
-        // 1. Consultar estado de la votación
+    function cargarTapas(esDespuesDeVotar = false) {
         fetch('obtener_estado.php?v=' + new Date().getTime())
             .then(res => res.json())
             .then(resStatus => {
                 const votacionAbierta = resStatus.success ? resStatus.votacion_abierta : true;
 
-                // Mensajes prioritarios según el estado y el usuario
-                if (!votacionAbierta) {
-                    mostrarMensaje('La votación está pausada actualmente. Consulta las tapas disponibles mientras se abre el proceso.', 'bg-amber-50 text-amber-800 border border-amber-200');
-                } else if (yaVoto) {
-                    mostrarMensaje('Ya has emitido tu voto en este dispositivo.', 'bg-blue-50 text-blue-800 border border-blue-200');
-                } else {
-                    ocultarMensaje();
+                // Solo actualizamos el banner de mensaje si NO venimos de emitir un voto en esta misma llamada
+                if (!esDespuesDeVotar) {
+                    if (!votacionAbierta) {
+                        mostrarMensaje('La votación está pausada actualmente. Consulta las tapas disponibles mientras se abre el proceso.', 'bg-amber-50 text-amber-800 border border-amber-200');
+                    } else if (yaVoto) {
+                        mostrarMensaje('Ya has emitido tu voto en este dispositivo.', 'bg-blue-50 text-blue-800 border border-blue-200');
+                    } else {
+                        ocultarMensaje();
+                    }
                 }
 
-                // 2. Cargar siempre la lista de tapas
                 return fetch('obtener_chefs.php').then(res => res.json()).then(resChefs => {
                     return { chefs: resChefs, votacionAbierta: votacionAbierta };
                 });
@@ -116,7 +117,6 @@
                         const fotoUrl = tapa.foto_tapa && tapa.foto_tapa !== '' ? `img/${tapa.foto_tapa}` : 'https://via.placeholder.com/200?text=Tapa';
                         const tituloPlato = tapa.nombre_tapa || `Tapa ${tapa.id}`;
                         
-                        // Estado del botón: deshabilitado si está pausada O si ya votó
                         const estaPausada = !data.votacionAbierta;
                         const botonDeshabilitado = estaPausada || yaVoto;
 
@@ -181,7 +181,7 @@
                         localStorage.setItem('voto_realizado', 'true');
                         yaVoto = true;
                         mostrarMensaje(data.message, 'bg-emerald-50 text-emerald-800 border border-emerald-200');
-                        cargarTapas();
+                        cargarTapas(true);
                     } else {
                         mostrarMensaje(data.message, 'bg-red-50 text-red-800 border border-red-200');
                     }
@@ -197,8 +197,18 @@
 
     function mostrarMensaje(text, classes) {
         const el = document.getElementById('mensaje');
-        el.className = `mb-6 p-4 rounded-xl text-center font-semibold shadow-md ${classes}`;
-        el.innerText = text;
+        
+        // Asignamos clases base de capa flotante + las clases de color/estado recibidas
+        el.className = `fixed bottom-6 left-1/2 -translate-x-1/2 z-50 w-[90%] max-w-md p-4 rounded-2xl shadow-2xl text-center font-semibold text-sm backdrop-blur-md transition-all duration-300 flex items-center justify-between gap-3 ${classes}`;
+        
+        // Inyectamos el texto con un icono de cierre
+        el.innerHTML = `
+            <span class="flex-1 text-left">${text}</span>
+            <button onclick="ocultarMensaje()" class="opacity-70 hover:opacity-100 font-bold px-2 py-1 text-xs uppercase tracking-wider rounded-md bg-black/5">
+                ✕
+            </button>
+        `;
+        
         el.classList.remove('hidden');
     }
 
