@@ -4,3 +4,4 @@ node_modules/
 *.log
 db.php
 datos.txt
+config.php

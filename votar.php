@@ -1,9 +1,9 @@
 <?php
 header('Content-Type: application/json');
 require_once 'db.php';
+require_once 'config.php';
 
-// Clave Secreta de reCAPTCHA v3 (formateada sin saltos de línea)
-define('RECAPTCHA_SECRET_KEY', '6LfDSsktAAAAABwz2Xo7tMg4zIV5VtDvsBm4sq6H');
+// Clave Secreta de reCAPTCHA v3
 
 // 1. Obtener los datos JSON
 $input = file_get_contents('php://input');

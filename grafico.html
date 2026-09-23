@@ -58,8 +58,8 @@
         </div>
 
         <!-- Área del Gráfico con Scroll Horizontal para asegurar la lectura de las 25 tapas -->
-        <div class="flex-1 bg-white/85 backdrop-blur-md rounded-2xl p-4 sm:p-6 shadow-lg border border-gray-200/80 min-h-[480px] relative overflow-x-auto">
-            <div class="w-full min-w-[1100px] h-[550px]">
+        <div class="flex-1 bg-white/85 backdrop-blur-md rounded-2xl p-4 sm:p-6 shadow-lg border border-gray-200/80 min-h-[500px] relative overflow-x-auto">
+            <div class="w-full min-w-[1100px] h-[570px]">
                 <canvas id="chartResultados"></canvas>
             </div>
         </div>
@@ -80,7 +80,7 @@
             id: 'imagenesEjeX',
             afterDraw(chart) {
                 const { ctx, chartArea: { bottom }, scales: { x } } = chart;
-                const size = 28; // Ajustado a 28px para encajar perfectamente con 25 barras
+                const size = 40; // Ajustado a 28px para encajar perfectamente con 25 barras
 
                 x.ticks.forEach((tick, index) => {
                     const xPos = x.getPixelForTick(index);
@@ -94,8 +94,8 @@
                             imagenesCache[rutaImagen] = img;
                         } else if (imagenesCache[rutaImagen].complete && imagenesCache[rutaImagen].naturalWidth !== 0) {
                             const img = imagenesCache[rutaImagen];
-                            const yPos = bottom + 18;
-
+                            const yPos = bottom + 30;
+                            
                             ctx.save();
                             ctx.beginPath();
                             ctx.arc(xPos, yPos, size / 2, 0, Math.PI * 2);
@@ -174,7 +174,7 @@
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
-                    layout: { padding: { bottom: 35 } },
+                    layout: { padding: { bottom: 43 } },
                     scales: {
                         y: {
                             beginAtZero: true,

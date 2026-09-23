@@ -24,14 +24,15 @@ try {
     }
 
     // 2. Alternar Estado de la Votación
-    if ($action === 'toggle_votacion') {
+        if ($action === 'toggle_votacion') {
         $input = json_decode(file_get_contents('php://input'), true);
-        $nuevo_estado = !empty($input['estado']) ? '1' : '0';
+        // Si $input['estado'] es false, guardamos '0', si es true guardamos '1'
+        $nuevoEstado = (isset($input['estado']) && $input['estado']) ? '1' : '0';
 
         $stmt = $pdo->prepare("UPDATE configuracion SET valor = ? WHERE clave = 'votacion_abierta'");
-        $stmt->execute([$nuevo_estado]);
+        $stmt->execute([$nuevoEstado]);
 
-        echo json_encode(['success' => true, 'estado' => $nuevo_estado === '1']);
+        echo json_encode(['success' => true, 'votacion_abierta' => ($nuevoEstado === '1')]);
         exit;
     }
 

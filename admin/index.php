@@ -38,6 +38,7 @@ require_once 'auth.php';
 
         <!-- Métrica de Votos -->
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <!-- Tarjeta Total Votos -->
             <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-200 flex items-center justify-between">
                 <div>
                     <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Total Votos Registrados</span>
@@ -89,14 +90,16 @@ require_once 'auth.php';
                         estadoVotacion = res.votacion_abierta;
                         const btnVot = document.getElementById('btn-toggle-votacion');
                         const txtVot = document.getElementById('status-votacion-text');
+                        btnVot.disabled = false;
+
                         if (estadoVotacion) {
                             txtVot.innerText = 'Abierta';
                             txtVot.className = 'text-lg font-bold text-emerald-600 mt-1';
                             btnVot.innerText = 'Pausar Votación';
                             btnVot.className = 'px-4 py-2 text-xs font-bold rounded-xl text-white bg-amber-600 hover:bg-amber-700 transition shadow-sm';
                         } else {
-                            txtVot.innerText = 'Cerrada';
-                            txtVot.className = 'text-lg font-bold text-red-600 mt-1';
+                            txtVot.innerText = 'Pausada';
+                            txtVot.className = 'text-lg font-bold text-amber-600 mt-1';
                             btnVot.innerText = 'Abrir Votación';
                             btnVot.className = 'px-4 py-2 text-xs font-bold rounded-xl text-white bg-emerald-600 hover:bg-emerald-700 transition shadow-sm';
                         }
@@ -105,6 +108,8 @@ require_once 'auth.php';
                         estadoDesvelar = res.desvelar_ganadores;
                         const btnDes = document.getElementById('btn-toggle-desvelar');
                         const txtDes = document.getElementById('status-desvelar-text');
+                        btnDes.disabled = false;
+
                         if (estadoDesvelar) {
                             txtDes.innerText = 'Ganadores Visibles';
                             txtDes.className = 'text-lg font-bold text-blue-600 mt-1';
@@ -117,23 +122,44 @@ require_once 'auth.php';
                             btnDes.className = 'px-4 py-2 text-xs font-bold rounded-xl text-white bg-blue-600 hover:bg-blue-700 transition shadow-sm';
                         }
                     }
-                });
+                })
+                .catch(err => console.error("Error al obtener el estado:", err));
         }
 
         function toggleVotacion() {
+            const btnVot = document.getElementById('btn-toggle-votacion');
+            btnVot.disabled = true;
+            btnVot.innerText = 'Procesando...';
+
             fetch('api_admin.php?action=toggle_votacion', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ estado: !estadoVotacion })
-            }).then(() => cargarEstado());
+            })
+            .then(res => res.json())
+            .then(() => cargarEstado())
+            .catch(err => {
+                console.error(err);
+                cargarEstado();
+            });
         }
 
         function toggleDesvelar() {
+            const btnDes = document.getElementById('btn-toggle-desvelar');
+            btnDes.disabled = true;
+            btnDes.innerText = 'Procesando...';
+
             fetch('api_admin.php?action=toggle_desvelar', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ estado: !estadoDesvelar })
-            }).then(() => cargarEstado());
+            })
+            .then(res => res.json())
+            .then(() => cargarEstado())
+            .catch(err => {
+                console.error(err);
+                cargarEstado();
+            });
         }
     </script>
 </body>
