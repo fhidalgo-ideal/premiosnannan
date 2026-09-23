@@ -88,7 +88,7 @@
 
     function cargarTapas() {
         // 1. Consultar estado de la votación
-        fetch('obtener_estado.php')
+        fetch('obtener_estado.php?v=' + new Date().getTime())
             .then(res => res.json())
             .then(resStatus => {
                 const votacionAbierta = resStatus.success ? resStatus.votacion_abierta : true;
